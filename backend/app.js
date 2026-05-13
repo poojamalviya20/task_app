@@ -12,10 +12,24 @@ app.use(express.json());
 
 app.use("/api/tasks", taskRoutes);
 
-sequelize.sync().then(() => {
-  console.log("DB connected");
+const startServer = async () => {
+  let connected = false;
 
-  app.listen(process.env.PORT, () => {
-    console.log(`Server running on ${process.env.PORT}`);
+  while (!connected) {
+    try {
+      await sequelize.authenticate();
+      await sequelize.sync();
+      connected = true;
+      console.log("DB connected");
+    } catch (error) {
+      console.log("Waiting for PostgreSQL...");
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+
+  app.listen(5000, "0.0.0.0", () => {
+    console.log("Server running on 5000");
   });
-});
+};
+
+startServer();
