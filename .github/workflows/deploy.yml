@@ -1,18 +1,26 @@
-name: Build
+name: Auto Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build backend
-        run: docker build -t task-backend ./backend
-
-      - name: Build frontend
-        run: docker build -t task-frontend ./frontend
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/task_app
+            git pull origin main
+            sudo docker compose down
+            sudo docker compose build --no-cache
+            sudo docker compose up -d
